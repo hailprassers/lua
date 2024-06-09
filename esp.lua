@@ -1,5 +1,3 @@
-
-pcall(function()
 local Services = setmetatable({}, {
     __index = function(_, index)
         return game:GetService(index)
@@ -57,7 +55,7 @@ do
         if Character and Character:FindFirstChild("HumanoidRootPart") then
             return Character.HumanoidRootPart.Position
         end
-        return Vector3.new()
+        return Vector3.new(math.huge,math.huge,math.huge)
     end
 
     function Utility:ThreadFunction(Func, Name, ...)
@@ -114,7 +112,7 @@ do
 
             BoxOutline.Thickness = 1.5
             BoxOutline.Filled = false
-            BoxOutline.Color = Color3.fromRGB(62, 255, 1206)
+            BoxOutline.Color = Color3.fromRGB(0, 0, 0)
             BoxOutline.Filled = false
             BoxOutline.Visible = false
 
@@ -155,6 +153,7 @@ do
     end
 
     function Visuals:Update()
+        pcall(function()
         if self and self.Player then
             local Drawings = self.Drawings
             local Plr = self.Player
@@ -208,6 +207,7 @@ do
             return self:Remove()
         end
     end
+    end)
 end
 
 game:GetService("RunService").RenderStepped:Connect(function()
@@ -223,4 +223,3 @@ game:GetService("RunService").RenderStepped:Connect(function()
     end
 end)
 
-end)
