@@ -1,5 +1,3 @@
---this is not done and currently will fuck up your roblox so dont use!
---im saving here incase i just stop working on it completly and come back 2 months later
 
 local Services = setmetatable({}, {
     __index = function(_, index)
@@ -57,9 +55,10 @@ do
         if Character and Character:FindFirstChild("HumanoidRootPart") then
             return Character.HumanoidRootPart.Position
         end
-        return Vector3.new(math.huge,math.huge,math.huge)
+        return Vector3.new(nil)
     end
 
+    --totally didnt use chatgpt for this
     function Utility:ThreadFunction(Func, Name, ...)
         local args = {...}
         local wrappedFunc = Name and function()
@@ -174,6 +173,7 @@ do
                     local Position, Visible = workspace.CurrentCamera:WorldToViewportPoint(Utility:GetRoot(Plr))
 
                     if not Visible then
+                        
                     else
                         if Settings.Box.Enabled then
                             local Factor = 1 / (Position.Z * math.tan(math.rad(workspace.CurrentCamera.FieldOfView * 0.5)) * 2 ) * 100
@@ -213,7 +213,7 @@ do
                     end
                 end
             end
-            task.wait(0.01)
+            task.wait(0.001)
             return self:Remove()
         end
     end
@@ -225,6 +225,11 @@ game:GetService("RunService").RenderStepped:Connect(function()
             Visuals:Make({ Player = Player })
         end, "Visuals:Make")
     end
+    game.Players.PlayerAdded:Connect(function(child)
+        child.CharacterAdded:Connect(function()
+            
+        end)
+    end)
     for _, Drawing in pairs(Visuals.Drawings) do
         Utility:ThreadFunction(function()
             Drawing:Update()
