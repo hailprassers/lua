@@ -1,3 +1,5 @@
+--ty to coconut83171 for get character functions
+
 local Services = setmetatable({}, {
     __index = function(_, index)
         return game:GetService(index)
