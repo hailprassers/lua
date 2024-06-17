@@ -1,4 +1,3 @@
-
 local Services = setmetatable({}, {
     __index = function(_, index)
         return game:GetService(index)
@@ -7,7 +6,6 @@ local Services = setmetatable({}, {
 
 local Players = Services.Players
 local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character
 
 getgenv().Settings = {
     Enabled = true,
@@ -44,21 +42,19 @@ do
     function Utility:GetHumanoid(Player)
         local Character = Utility:GetCharacter(Player)
         if Character then
-            local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-            return Humanoid
+            return Character:FindFirstChildOfClass("Humanoid")
         end
         return nil
     end
 
     function Utility:GetRoot(Player)
         local Character = Utility:GetCharacter(Player)
-        if Character and Character:FindFirstChild("HumanoidRootPart") then
-            return Character.HumanoidRootPart.Position
+        if Character then
+            return Character:FindFirstChild("HumanoidRootPart")
         end
-        return Vector3.new(nil)
+        return nil
     end
 
-    --totally didnt use chatgpt for this
     function Utility:ThreadFunction(Func, Name, ...)
         local args = {...}
         local wrappedFunc = Name and function()
@@ -89,8 +85,9 @@ do
                 Player = Properties.Player,
                 Drawings = {
                     Name = Drawing.new("Text"),
-                    Box = Drawing.new("Square"),
                     BoxOutline = Drawing.new("Square"),
+                    BoxInline = Drawing.new("Square"),
+                    Box = Drawing.new("Square"),
                     Hpbar = Drawing.new("Square"),
                     HpBarOutline = Drawing.new("Square"),
                     HealthText = Drawing.new("Text")
@@ -99,6 +96,22 @@ do
                 __index = Visuals
             })
             
+            local Box, BoxOutline, BoxInline = Self.Drawings.Box, Self.Drawings.BoxOutline, Self.Drawings.BoxInline
+            Box.Filled = true
+            Box.Visible = false
+            Box.Transparency = 0.4
+            Box.Color = Color3.fromRGB(255, 255, 255)
+
+            BoxOutline.Thickness = 1.25
+            BoxOutline.Filled = false
+            BoxOutline.Color = Color3.fromRGB(0, 0, 0)
+            BoxOutline.Visible = false
+
+            BoxInline.Thickness = 0.5
+            BoxInline.Filled = false
+            BoxInline.Color = Color3.fromRGB(255,255,255)
+            BoxInline.Visible = false
+
             local Name = Self.Drawings.Name
             Name.Text = Self.Player.Name
             Name.Center = true
@@ -107,31 +120,18 @@ do
             Name.Visible = false
             Name.Outline = true
             Name.Color = Color3.fromRGB(255, 255, 255)
-            Name.ZIndex = 3
 
-            local Box, BoxOutline = Self.Drawings.Box, Self.Drawings.BoxOutline
-            Box.Thickness = 0.5
-            Box.Filled = false
-            Box.Visible = false
-            Box.Color = Color3.fromRGB(255, 255, 255)
-            Box.ZIndex = 2
-
-            BoxOutline.Thickness = 1.5
-            BoxOutline.Filled = false
-            BoxOutline.Color = Color3.fromRGB(0, 0, 0)
-            BoxOutline.Filled = false
-            BoxOutline.Visible = false
-
-            local Hpbar = Self.Drawings.Hpbar
-            Hpbar.Thickness = 1.5
-            Hpbar.Filled = true
-            Hpbar.Visible = false
-            Hpbar.ZIndex = 2
             local HpBarOutline = Self.Drawings.HpBarOutline
             HpBarOutline.Thickness = 1.5
             HpBarOutline.Filled = true
             HpBarOutline.Visible = false
             HpBarOutline.Color = Color3.fromRGB(0, 0, 0)
+
+            local Hpbar = Self.Drawings.Hpbar
+            Hpbar.Thickness = 1.5
+            Hpbar.Filled = true
+            Hpbar.Visible = false
+
             local Hptext = Self.Drawings.HealthText
             Hptext.Text = "0"
             Hptext.Center = true
@@ -139,7 +139,6 @@ do
             Hptext.Font = 2
             Hptext.Visible = false
             Hptext.Outline = true
-            Hptext.ZIndex = 3
 
             Visuals.Drawings[Properties.Player] = Self
 
@@ -160,79 +159,103 @@ do
 
     function Visuals:Update()
         local Settings = getgenv().Settings
-        if Settings.Enabled == false then
-            return
-        end
+        if not Settings.Enabled then return end
 
         if self and self.Player then
             local Drawings = self.Drawings
             local Plr = self.Player
-            if Plr and Plr.Character and Utility:GetRoot(Plr) ~= nil then
-                local Character = Plr.Character
-                if Character:IsDescendantOf(workspace) then
-                    local Position, Visible = workspace.CurrentCamera:WorldToViewportPoint(Utility:GetRoot(Plr))
+            local RootPart = Utility:GetRoot(Plr)
+            if Plr and Plr.Character and RootPart then
+                local Position, Visible = workspace.CurrentCamera:WorldToViewportPoint(RootPart.Position)
 
-                    if not Visible then
-                        
+                if Visible then
+                    if Settings.Box.Enabled then
+                        local ViewportSize = workspace.CurrentCamera.ViewportSize
+                        local ScreenWidth, ScreenHeight = ViewportSize.X, ViewportSize.Y
+                        local Factor = 1 / (Position.Z * math.tan(math.rad(workspace.CurrentCamera.FieldOfView * 0.5)) * 2) * 100
+                        local Width, Height = math.floor(ScreenHeight / 40 * Factor), math.floor(ScreenWidth /  40 * Factor)
+
+                        Drawings.Box.Size = Vector2.new(Width, Height)
+                        Drawings.Box.Position = Vector2.new(Position.X - Width / 2, Position.Y - Height / 2.2)
+                        Drawings.Box.Visible = true
+                        Drawings.Box.Color = Settings.Box.Color
+
+                        Drawings.BoxOutline.Size = Vector2.new(Width, Height)
+                        Drawings.BoxOutline.Position = Vector2.new(Position.X - Width / 2, Position.Y - Height / 2.2)
+                        Drawings.BoxOutline.Visible = true
+
+                        Drawings.BoxInline.Size = Vector2.new(Width, Height)
+                        Drawings.BoxInline.Position = Vector2.new(Position.X - Width / 2, Position.Y - Height / 2.2)
+                        Drawings.BoxInline.Visible = true
                     else
-                        if Settings.Box.Enabled then
-                            local Factor = 1 / (Position.Z * math.tan(math.rad(workspace.CurrentCamera.FieldOfView * 0.5)) * 2 ) * 100
-                            local Width, Height = math.floor(37 * Factor), math.floor(55 * Factor)
+                        Drawings.Box.Visible = false
+                        Drawings.BoxOutline.Visible = false
+                        Drawings.BoxInline.Visible = false
+                    end
 
-                            Drawings.Box.Size = Vector2.new(Width, Height)
-                            Drawings.Box.Position = Vector2.new(Position.X - Drawings.Box.Size.X / 2, Position.Y - Drawings.Box.Size.Y / 2.2)
-                            Drawings.Box.Visible = Visible
-                            Drawings.Box.Color = Settings.Box.Color
+                    if Settings.Name.Enabled then
+                        Drawings.Name.Visible = true
+                        Drawings.Name.Text = Plr.Name
+                        Drawings.Name.Position = Drawings.Box.Position + Vector2.new(Drawings.Box.Size.X / 2, -20)
+                        Drawings.Name.Color = Settings.Name.Color
+                    else
+                        Drawings.Name.Visible = false
+                    end
 
-                            Drawings.BoxOutline.Size = Drawings.Box.Size
-                            Drawings.BoxOutline.Position = Drawings.Box.Position
-                            Drawings.BoxOutline.Visible = Visible
-                        end
-
-                        if Settings.Name.Enabled then
-                            Drawings.Name.Visible = Visible
-                            Drawings.Name.Text = Plr.Name
-                            Drawings.Name.Position = Drawings.Box.Position + Vector2.new(Drawings.Box.Size.X / 2, -(13 + 7))
-                            Drawings.Name.Color = Settings.Name.Color
-                        end
-
-                        if Settings.Healthbar.Enabled then
-                            local Health, MaxHealth = Plr.Character:WaitForChild("Humanoid").Health or 0, Plr.Character:WaitForChild("Humanoid").MaxHealth or 100
+                    if Settings.Healthbar.Enabled then
+                        local Humanoid = Plr.Character:FindFirstChildOfClass("Humanoid")
+                        if Humanoid then
+                            local Health, MaxHealth = Humanoid.Health, Humanoid.MaxHealth
                             local HealthPercentage = Health / MaxHealth
                             local Color = Color3.new(255, 0, 0):Lerp(Color3.fromRGB(0, 255, 0), HealthPercentage)
 
-                            Drawings.Hpbar.Visible = Visible
-                            Drawings.Hpbar.Size = Vector2.new(2.5, (math.floor(Drawings.Box.Size.Y * (Health / MaxHealth))))
-                            Drawings.Hpbar.Position = Vector2.new(Drawings.Box.Position.X - 10, (Drawings.Box.Position.Y + Drawings.Box.Size.Y) - (math.floor(Drawings.Box.Size.Y * (Health / MaxHealth))))
+                            Drawings.Hpbar.Visible = true
+                            Drawings.Hpbar.Size = Vector2.new(2.5, math.floor(Drawings.Box.Size.Y * HealthPercentage))
+                            Drawings.Hpbar.Position = Vector2.new(Drawings.Box.Position.X - 10, Drawings.Box.Position.Y + Drawings.Box.Size.Y - Drawings.Hpbar.Size.Y)
                             Drawings.Hpbar.Color = Color
 
-                            Drawings.HpBarOutline.Visible = Visible
+                            Drawings.HpBarOutline.Visible = true
                             Drawings.HpBarOutline.Size = Vector2.new(4.5, Drawings.Box.Size.Y + 2.5)
                             Drawings.HpBarOutline.Position = Vector2.new(Drawings.Box.Position.X - 11, Drawings.Box.Position.Y - 1)
+                        else
+                            Drawings.Hpbar.Visible = false
+                            Drawings.HpBarOutline.Visible = false
                         end
+                    else
+                        Drawings.Hpbar.Visible = false
+                        Drawings.HpBarOutline.Visible = false
+                    end
+                else
+                    for _, Drawing in pairs(Drawings) do
+                        Drawing.Visible = false
                     end
                 end
+            else
+                for _, Drawing in pairs(Drawings) do
+                    Drawing.Visible = false
+                end
             end
-            task.wait(0.001)
-            return self:Remove()
         end
     end
 end
 
 game:GetService("RunService").RenderStepped:Connect(function()
     for _, Player in pairs(Players:GetPlayers()) do
-        Utility:ThreadFunction(function()
-            Visuals:Make({ Player = Player })
-        end, "Visuals:Make")
+        if not Visuals.Drawings[Player] then
+            Utility:ThreadFunction(function()
+                Visuals:Make({ Player = Player })
+            end, "Visuals:Make")
+        end
     end
-    game.Players.PlayerAdded:Connect(function(child)
-        child.CharacterAdded:Connect(function()
-            
-        end)
-    end)
     for _, Drawing in pairs(Visuals.Drawings) do
-        Utility:ThreadFunction(function()
+       Utility:ThreadFunction(function()
             Drawing:Update()
         end, "Drawing:Update")
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(Player)
+    if Visuals.Drawings[Player] then
+        Visuals.Drawings[Player]:Remove()
     end
 end)
